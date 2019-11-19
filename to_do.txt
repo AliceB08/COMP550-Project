@@ -1,7 +1,7 @@
-- Build bag of words representation 
++ Build bag of words representation 
 - Build a sequential representation
 - Sentiment analysis feature  (*)
-- Logistic Regression 
++ Logistic Regression 
 - Majority Genre (classifier that automatically assumes this is majority)
 - Naive Bayes 
 - LSTM 
