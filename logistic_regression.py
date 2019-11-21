@@ -41,7 +41,7 @@ def get_lemma(sentence):
     tokens = sentence.split() 
     lemma = WordNetLemmatizer() 
     lemmad_tokens = [lemma.lemmatize(token) for token in tokens]
-    return " ".join(stemmed_tokens)
+    return " ".join(lemmad_tokens)
     
 #*************** Read Data *******************
 csv = pd.read_csv('./lyrics.csv')

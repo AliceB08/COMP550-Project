@@ -50,8 +50,8 @@ csv['lyrics'] = csv.apply(clean, axis=1)
 #print("number of rows after dropping null, len(csv))
 #labels = csv['genre']  
 #csv['lyrics'] = csv.apply(clean, axis=1)
-# lyrics = csv['lyrics']
-hh_lyrics = csv.loc[csv['genre'] == 1]['lyrics']
+#lyrics = csv['lyrics']
+#hh_lyrics = csv.loc[csv['genre'] == 1]['lyrics']
 #print(len(rb_lyrics)) 
 
 
@@ -88,7 +88,7 @@ def popularity_of_words(lyrics):
     word_freq = sorted(list(zip(word_tokens.values(), word_tokens.keys())), reverse=True)
     print(word_freq[:25])
 
-corr_plot(hh_lyrics)
-#dist(csv['year'])    
+#corr_plot(hh_lyrics)
+dist(csv['genre'])    
 #cloud(hh_lyrics)
 #popularity_of_words(lyrics)
