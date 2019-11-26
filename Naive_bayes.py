@@ -4,6 +4,7 @@ import pandas as pd
 from langdetect import detect
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import train_test_split
+from nltk.corpus import stopwords
 import string
 import nltk
 
@@ -26,7 +27,13 @@ def pre_process(songs):
     all_songs = []
     all_labels = []
     for i,song in zip(songs.index,songs['lyrics']):
-        if songs['genre'][i] == 'Not Available' or songs['genre'][i] == 'Other:
+#        print(i)
+        if songs['genre'][i] == 'Not Available' or songs['genre'][i] == 'Other':
+            continue
+        else:
+            #strip punctuation
+            songs['lyrics'][i] = ''.join(ch for ch in songs['lyrics'][i] if ch not in exclude)
+        if len(np.unique(songs['lyrics'][i].split(' '))) < 5:
             continue
         elif detect(song) == 'en':
             chancon = song.replace('\n', ' ').replace('(','').replace(')','').split(' ')
@@ -37,8 +44,8 @@ def pre_process(songs):
                     continue
                 elif ww[0] == '[' or ww[-1] == ']':
                     chancon.remove(ww)
-                elif ww[-1] in set(string.punctuation):
-                    ww = ww[:-1]
+#                elif ww[-1] in set(string.punctuation):
+#                    ww = ww[:-1]
                 new_chancon.append(ww)
             songs['lyrics'][i] = ' '.join(new_chancon)
             songs['genre'][i] = genre_to_int(songs['genre'][i])
@@ -55,36 +62,33 @@ def find_features(document,word_features):
 
 corpus_root = os.path.dirname(os.path.realpath(__file__)).split('/')
 data_root = '/'.join(corpus_root[:10]) + '/data/kaggle'
+exclude = set(string.punctuation)
+exclude.add('\n')
 
-N = 2750
-#problem with 3974
+N = 5000
 songs = pd.read_csv('./lyrics.csv')
 songs = songs[pd.notnull(songs['lyrics'])]
 songs = songs.drop(songs.index[N:])
-#songs = songs.truncate(before=0, after=N)
+songs = songs.sample(frac=1)
 song_list,label_list = pre_process(songs)
 for label in label_list:
     label = genre_to_int(label)
 
 #generate bag of words features
-all_words = []
+all_words = [];
+stop = stopwords.words('english')
 for doc in song_list:
     for w in doc.split(' '):
-        all_words.append(w.lower())
+        if w.lower() not in stop:
+            all_words.append(w.lower())
+
 all_words = nltk.FreqDist(all_words)
 word_features = [w for w in list(all_words.most_common())[:3000]]
 features = [(find_features(song,word_features), genre) for (song,genre) in zip(song_list,label_list)]
-training_set = features[:int(0.8*N)]
-testing_set = features[int(0.8*N)+1:]
+training_set = features[:int(0.8*len(features))]
+testing_set = features[int(0.8*len(features))+1:]
 
 clf = nltk.NaiveBayesClassifier.train(training_set)
 
 acc = (nltk.classify.accuracy(clf,testing_set))*100
 print(" acc.", acc)
-
-#vectorizer = CountVectorizer(stop_words = 'english',max_features=5000)
-#X = vectorizer.fit_transform(song_list)
-#
-#X_train, X_test, y_train, y_test = train_test_split(X.toarray(), label_list, test_size = .3, shuffle=True, random_state = 43)
-#training_set = [(s,l) for (s,l) in zip(X_train.tolist(),y_train)]
-#testing_set = [[s,l] for (s,l) in zip(X_test.tolist(),y_test)]
