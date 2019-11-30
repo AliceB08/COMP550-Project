@@ -7,6 +7,7 @@ from sklearn.model_selection import train_test_split
 from nltk.corpus import stopwords
 import string
 import nltk
+from sklearn.model_selection import train_test_split
 
 def genre_to_int(genre):
     if genre == 'Pop': return 0
@@ -84,9 +85,13 @@ for doc in song_list:
 
 all_words = nltk.FreqDist(all_words)
 word_features = [w for w in list(all_words.most_common())[:3000]]
-features = [(find_features(song,word_features), genre) for (song,genre) in zip(song_list,label_list)]
-training_set = features[:int(0.8*len(features))]
-testing_set = features[int(0.8*len(features))+1:]
+lyrics = pd.Series(song_list); labels = pd.Series(label_list)
+X_train, X_test, y_train, y_test = train_test_split(lyrics, labels, test_size = .3, shuffle=True, random_state = 43)
+#features = [(find_features(song,word_features), genre) for (song,genre) in zip(song_list,label_list)]
+training_set = [(find_features(song,word_features), genre) for (song,genre) in zip(X_train,y_train)]
+testing_set = [(find_features(song,word_features), genre) for (song,genre) in zip(X_test,y_test)]
+#training_set = features[:int(0.8*len(features))]
+#testing_set = features[int(0.8*len(features))+1:]
 
 clf = nltk.NaiveBayesClassifier.train(training_set)
 
