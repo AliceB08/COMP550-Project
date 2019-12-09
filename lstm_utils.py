@@ -1,11 +1,14 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.autograd import Variable
 import torch.optim as optim
 import pandas as pd
 from torch.utils.data import DataLoader, random_split
 from torch.utils import data
 from sklearn.utils import shuffle 
+
+
 
 torch.manual_seed(1)
 
@@ -22,12 +25,13 @@ class LSTMTagger(nn.Module):
 
         # The LSTM takes word embeddings as inputs, and outputs hidden states
         # with dimensionality hidden_dim.
-        self.lstm = nn.LSTM(embedding_dim, hidden_dim)
+        self.lstm = nn.LSTM(embedding_dim, hidden_dim, batch_first = True)
 
         # The linear layer that maps from hidden state space to tag space
         self.hidden2tag = nn.Linear(hidden_dim, tagset_size)
 
     def forward(self, sentence):
+#        sentence = sentence.unsqueeze(-1)
         embeds = self.word_embeddings(sentence)
         lstm_out, _ = self.lstm(embeds.view(len(sentence), 1, -1))
         tag_space = self.hidden2tag(lstm_out.view(len(sentence), -1))
@@ -36,16 +40,20 @@ class LSTMTagger(nn.Module):
 
 class song_dataset(data.Dataset):
     def __init__(self, csv_file):
-        df = pd.read_csv(csv_file)
         self.songs = [] #set of songs
         self.genre = [] #set of labels
         self.vocab_size = 0
         self.labels = [] #all the unique labels in the dataset
+        self.song_size = 0
+        
+        df = pd.read_csv(csv_file)
         to_ix = {}        
-        #load csv as dataframe
+        #load csv as dataframe and process data
         for row in df.index:
 #            lyrics = [w for w in df['lyrics'][row].split()]
             lyrics = []
+            if len(df['lyrics'][row].split()) > self.song_size:
+                self.song_size = len(df['lyrics'][row].split())
             for w in df['lyrics'][row].split(): 
                 if w not in to_ix:
                     to_ix[w] = len(to_ix)
@@ -58,14 +66,30 @@ class song_dataset(data.Dataset):
             self.songs.append(lyrics)
             self.genre.append(tags)
         
+        to_ix['zero_pad_token'] = len(to_ix)
+        
+        #zero pad songs
+        for i in range(len(self.songs)):
+            if len(self.songs[i]) == self.song_size:
+                continue
+            else:
+                self.songs[i] = self.songs[i] +[to_ix['zero_pad_token']]*(self.song_size - len(self.songs[i]))
+                self.genre[i] = self.genre[i] + [self.genre[i][-1]]*(self.song_size - len(self.genre[i]))                
+
         self.vocab_size = len(to_ix)
+        self.words = to_ix
         
     def get_vocab_size(self):
         return self.vocab_size
     
     def get_label_size(self):
         return len(self.labels)
-        
+    
+    def get_song_size(self):
+        return self.song_size
+    
+    def get_vocabulary(self):
+        return self.words
         
     def __len__(self):
         return len(self.songs)
