@@ -55,6 +55,7 @@ csv['lyrics'] = csv.apply(clean, axis=1)
 #print(len(rb_lyrics)) 
 
 
+
 def dist(labels): 
     sns.distplot(labels, kde=False, rug=True)
     # ax.to_file('label_distribution.png')

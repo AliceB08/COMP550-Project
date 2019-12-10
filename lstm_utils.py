@@ -7,6 +7,7 @@ import pandas as pd
 from torch.utils.data import DataLoader, random_split
 from torch.utils import data
 from sklearn.utils import shuffle 
+from sklearn.model_selection import train_test_split
 
 
 
@@ -104,7 +105,96 @@ class song_dataset(data.Dataset):
         
         return torch.tensor(X, dtype=torch.long), torch.tensor(y, dtype=torch.long)
     
-def genre_to_int(genre):
+# def genre_to_int(row):
+#     genre = row['genre']
+#     if genre == 'Pop': return 0
+#     if genre == 'Hip-Hop': return 1
+#     if genre == 'Rock': return 2
+#     if genre == 'Metal': return 3
+#     if genre == 'Country': return 4
+#     if genre == 'Jazz': return 5
+#     if genre == 'Electronic': return 6
+#     if genre == 'Folk': return 7
+#     if genre == 'R&B': return 8
+#     if genre == 'Indie': return 9
+#     if genre == 'Not Available': return None 
+#     if genre == 'Other': return None
+
+# def get_data(csv_file, size = 1000, shuff = True):
+#     df = pd.read_csv(csv_file)
+#     df['genre'] = df.apply(genre_to_int, axis=1)
+#     df.dropna(axis = 0, how="any", inplace=True)
+    
+#     if shuff:
+#         df = shuffle(df, random_state=2)
+#     df = df.iloc[:size]
+#     data = []
+#     for row in df.index:
+#         try: 
+#             lyrics = df['lyrics'][row].split()
+#             target = df['genre'][row]
+#             tags = [target for _ in range(len(lyrics))]
+#             data.append((lyrics, tags))
+#         except: print()
+    
+#     return data
+
+def balance(df): 
+    
+    lengths = [] 
+
+    pop = df.loc[df['genre'] == 0]
+    rock = df.loc[df['genre'] == 1]
+    hh = df.loc[df['genre'] == 2]
+    metal = df.loc[df['genre'] == 3]
+    country = df.loc[df['genre'] == 4]
+    elec = df.loc[df['genre'] == 5]
+    folk = df.loc[df['genre'] == 6]
+    rb = df.loc[df['genre'] == 7]
+    indie = df.loc[df['genre'] == 8]
+
+    # df2 = pd.DataFrame()
+    all_classes = [i for i in range(9)]
+    for c in all_classes: 
+        subset = df.loc[df['genre'] == c]
+        lengths.append(len(subset))
+    print(all_classes)
+    print(lengths)
+    # bNum = min(lengths)
+    bNum = 1000
+    pop = shuffle(pop, random_state = 2)
+    rock = shuffle(rock, random_state = 2)
+    hh = shuffle(hh, random_state = 2)
+    metal = shuffle(metal, random_state= 2)
+    country = shuffle(country, random_state = 2)
+    elec = shuffle(elec, random_state = 2)
+    folk = shuffle(folk, random_state= 2)
+    rb = shuffle(rb, random_state = 2)
+    indie = shuffle(indie, random_state = 2)
+
+    pop = pop.iloc[:bNum]
+    rock = rock.iloc[:bNum]
+    hh = hh.iloc[:bNum]
+    metal = metal.iloc[:bNum]
+    country = country.iloc[:bNum]
+    elec = elec.iloc[:bNum]
+    folk = folk.iloc[:bNum]
+    rb = rb.iloc[:bNum]
+    indie = indie.iloc[:bNum]
+
+    df2 = pd.concat([pop, rock, hh, metal, country, elec, folk, rb, indie], axis=0)
+    lengths = []
+    for c in all_classes: 
+        subset = df2.loc[df['genre'] == c]['lyrics']
+        lengths.append(len(subset))
+    print(lengths)
+    print('************BALANCED****************')
+    print(df2)
+    print('************BALANCED****************')
+    return df2
+
+def genre_to_int(row):
+    genre = row['genre']
     if genre == 'Pop': return 0
     if genre == 'Hip-Hop': return 1
     if genre == 'Rock': return 2
@@ -118,20 +208,48 @@ def genre_to_int(genre):
     if genre == 'Not Available': return None 
     if genre == 'Other': return None
 
-def get_data(csv_file, size = 1000, shuff = True):
+
+def get_data(csv_file, size, shuff, mode):
     df = pd.read_csv(csv_file)
-    if shuff:
-        df = shuffle(df, random_state=2)
-#        df = shuffle(df)
-    df = df.iloc[:size]
-    data = []
-    for row in df.index:
-        lyrics = df['lyrics'][row].split()
-        target = df['genre'][row]
-        tags = [target for _ in range(len(lyrics))]
-        data.append((lyrics, tags))
+    print(df)
+    # df['genre'] = df.apply(genre_to_int, axis=1)
+    df.dropna(axis = 0, how="any", inplace=True)
+    df = balance(df)
+    # if shuff:
+    #     df = shuffle(df, random_state=2)
+    # df = df.iloc[:size]
+
+    train_data = []
+    test_data = [] 
+
+    all_X = df['lyrics']
+    all_Y = df['genre']
+    X_train, X_test, y_train, y_test = train_test_split(all_X, all_Y, test_size = .2, random_state = 3, stratify=all_Y, shuffle=True)
     
-    return data
+    if mode == 'train': 
+        train_df = pd.concat([X_train,y_train], axis=1)
+        print(train_df)
+        for row in train_df.index:
+            try: 
+                lyrics = df['lyrics'][row].split()
+                target = df['genre'][row]
+                tags = [target for _ in range(len(lyrics))]
+                train_data.append((lyrics, tags))
+            except: print()
+        return train_data
+    
+    if mode == 'test':
+        test_df = pd.concat([X_test,y_test], axis=1)
+        
+        for row in test_df.index:
+            try: 
+                lyrics = df['lyrics'][row].split()
+                target = df['genre'][row]
+                tags = [target for _ in range(len(lyrics))]
+                test_data.append((lyrics, tags))
+            except: print()
+    
+        return test_data
 
 def prepare_sequence(seq, to_ix):
     idxs = [to_ix[w] for w in seq]
