@@ -139,6 +139,59 @@ class song_dataset(data.Dataset):
     
 #     return data
 
+def balance(df): 
+    
+    lengths = [] 
+
+    pop = df.loc[df['genre'] == 0]
+    rock = df.loc[df['genre'] == 1]
+    hh = df.loc[df['genre'] == 2]
+    metal = df.loc[df['genre'] == 3]
+    country = df.loc[df['genre'] == 4]
+    elec = df.loc[df['genre'] == 5]
+    folk = df.loc[df['genre'] == 6]
+    rb = df.loc[df['genre'] == 7]
+    indie = df.loc[df['genre'] == 8]
+
+    # df2 = pd.DataFrame()
+    all_classes = [i for i in range(9)]
+    for c in all_classes: 
+        subset = df.loc[df['genre'] == c]
+        lengths.append(len(subset))
+    print(all_classes)
+    print(lengths)
+    # bNum = min(lengths)
+    bNum = 1000
+    pop = shuffle(pop, random_state = 2)
+    rock = shuffle(rock, random_state = 2)
+    hh = shuffle(hh, random_state = 2)
+    metal = shuffle(metal, random_state= 2)
+    country = shuffle(country, random_state = 2)
+    elec = shuffle(elec, random_state = 2)
+    folk = shuffle(folk, random_state= 2)
+    rb = shuffle(rb, random_state = 2)
+    indie = shuffle(indie, random_state = 2)
+
+    pop = pop.iloc[:bNum]
+    rock = rock.iloc[:bNum]
+    hh = hh.iloc[:bNum]
+    metal = metal.iloc[:bNum]
+    country = country.iloc[:bNum]
+    elec = elec.iloc[:bNum]
+    folk = folk.iloc[:bNum]
+    rb = rb.iloc[:bNum]
+    indie = indie.iloc[:bNum]
+
+    df2 = pd.concat([pop, rock, hh, metal, country, elec, folk, rb, indie], axis=0)
+    lengths = []
+    for c in all_classes: 
+        subset = df2.loc[df['genre'] == c]['lyrics']
+        lengths.append(len(subset))
+    print(lengths)
+    print('************BALANCED****************')
+    print(df2)
+    print('************BALANCED****************')
+    return df2
 
 def genre_to_int(row):
     genre = row['genre']
@@ -158,18 +211,20 @@ def genre_to_int(row):
 
 def get_data(csv_file, size, shuff, mode):
     df = pd.read_csv(csv_file)
-    df['genre'] = df.apply(genre_to_int, axis=1)
+    print(df)
+    # df['genre'] = df.apply(genre_to_int, axis=1)
     df.dropna(axis = 0, how="any", inplace=True)
-    if shuff:
-        df = shuffle(df, random_state=2)
-    df = df.iloc[:size]
+    df = balance(df)
+    # if shuff:
+    #     df = shuffle(df, random_state=2)
+    # df = df.iloc[:size]
 
     train_data = []
     test_data = [] 
 
     all_X = df['lyrics']
     all_Y = df['genre']
-    X_train, X_test, y_train, y_test = train_test_split(all_X, all_Y, test_size = .2, random_state = 3, stratify=all_Y)
+    X_train, X_test, y_train, y_test = train_test_split(all_X, all_Y, test_size = .2, random_state = 3, stratify=all_Y, shuffle=True)
     
     if mode == 'train': 
         train_df = pd.concat([X_train,y_train], axis=1)
