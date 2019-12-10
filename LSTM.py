@@ -19,10 +19,10 @@ tag_to_ix = {0.0: 0, 1.0: 1, 2.0: 2, 3.0: 3, 4.0: 4, 5.0: 5,6.0: 6,7.0: 7, 8.0: 
 #load data
 # training_data = get_data('./train_data.csv', size = 1000)
 #testing_data = get_data('./test_data.csv', size = 200)
-training_data = get_data('../lyrics.csv',size = 1000, shuff = True, mode = 'train')
-testing_data = get_data('../lyrics.csv', size = 1000, shuff = True, mode = 'test')
+training_data = get_data('../data_en_all_data.csv', size = 1000, shuff = True, mode = 'train')
+testing_data = get_data('../data_en_all_data.csv', size = 1000, shuff = True, mode = 'test')
 
-print(training_data[:2])
+#print(training_data[:2]) 
 #convert words to a number
 word_to_ix = {}
 for sent, tags in training_data:
