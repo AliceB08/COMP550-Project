@@ -90,6 +90,6 @@ def popularity_of_words(lyrics):
     print(word_freq[:25])
 
 #corr_plot(hh_lyrics)
-dist(csv['genre'])    
+# dist(csv['genre'])    
 #cloud(hh_lyrics)
 #popularity_of_words(lyrics)

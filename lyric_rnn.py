@@ -7,25 +7,84 @@ from nltk.corpus import stopwords, words
 import re 
 from nltk import tokenize
 import numpy as np 
+from sklearn.utils import shuffle 
+from sklearn.metrics import roc_auc_score, roc_curve, average_precision_score, accuracy_score, auc, f1_score, recall_score
 
+import nltk
+nltk.download('words')
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
+
+
+
+def balance(df): 
+    
+    lengths = [] 
+
+    pop = df.loc[df['genre'] == 'Pop']
+    rock = df.loc[df['genre'] == 'Rock']
+    hh = df.loc[df['genre'] == 'Hip-Hop']
+    metal = df.loc[df['genre'] == 'Metal']
+    country = df.loc[df['genre'] == 'Country']
+    elec = df.loc[df['genre'] == 'Electronic']
+    folk = df.loc[df['genre'] == 'Folk']
+    rb = df.loc[df['genre'] == 'R&B']
+    indie = df.loc[df['genre'] == 'Indie']
+
+    genre_list = ['Pop', 'Rock', 'Hip-Hop', 'Metal', 'Country', 'Electronic', 'Folk', 'R&B', 'Indie']
+    print(len(pop))
+
+    for c in genre_list: 
+        subset = df.loc[df['genre'] == c]
+        lengths.append(len(subset))
+    
+    print(lengths)
+    bNum = min(lengths)
+    # bNum = 1000
+    pop = shuffle(pop, random_state = 2)
+    rock = shuffle(rock, random_state = 2)
+    hh = shuffle(hh, random_state = 2)
+    metal = shuffle(metal, random_state= 2)
+    country = shuffle(country, random_state = 2)
+    elec = shuffle(elec, random_state = 2)
+    folk = shuffle(folk, random_state= 2)
+    rb = shuffle(rb, random_state = 2)
+    indie = shuffle(indie, random_state = 2)
+
+    pop = pop.iloc[:bNum]
+    rock = rock.iloc[:bNum]
+    hh = hh.iloc[:bNum]
+    metal = metal.iloc[:bNum]
+    country = country.iloc[:bNum]
+    elec = elec.iloc[:bNum]
+    folk = folk.iloc[:bNum]
+    rb = rb.iloc[:bNum]
+    indie = indie.iloc[:bNum]
+
+    df2 = pd.concat([pop, rock, hh, metal, country, elec, folk, rb, indie], axis=0)
+    lengths = []
+    for c in genre_list: 
+        subset = df2.loc[df['genre'] == c]['lyrics']
+        lengths.append(len(subset))
+    print(lengths)
+  
+    return df2
+
+def remove_unknown(row):
+    genre = row['genre']
+    
+    if genre == 'Not Available': return None 
+    if genre == 'Other': return None
+
 
 #LOAD DATA
 
 df = pd.read_csv('./lyrics.csv')
-df.dropna(axis = 0, how="any", inplace=True)
 df = df[df.lyrics != 'Instrumental']
+# df['genre'] = df.apply(remove_unknown, axis=1)
+df.dropna(axis = 0, how="any", inplace=True)
+#df = balance(df)
 
-# pop = df.loc[df['genre'] == 'Pop']['lyrics']
-# rock = df.loc[df['genre'] == 'Rock']['lyrics']
-# hh = df.loc[df['genre'] == 'Hip-Hop']['lyrics']
-# metal = df.loc[df['genre'] == 'Metal']['lyrics']
-# country = df.loc[df['genre'] == 'Country']['lyrics']
-# elec = df.loc[df['genre'] == 'Electronic']['lyrics']
-# folk = df.loc[df['genre'] == 'Folk']['lyrics']
-# rb = df.loc[df['genre'] == 'R&B']['lyrics']
-# indie = df.loc[df['genre'] == 'Indie']['lyrics']
 
 REPLACE_BY_SPACE_RE = re.compile('[/(){}\[\]\|@,;]')
 BAD_SYMBOLS_RE = re.compile('[^0-9a-z #+_]')
@@ -166,17 +225,19 @@ criterion = nn.NLLLoss()
     #Back propagate 
     #Return output and loss 
 
-learning_rate = 0.05
+learning_rate = 0.01
 
 def train(category_tensor, line_tensor): 
     hidden = rnn.initHidden()
     rnn.zero_grad() 
     for i in range(line_tensor.size()[0]): 
+        
         output, hidden = rnn(line_tensor[i], hidden)
 
+    
     loss = criterion(output, category_tensor)
     loss.backward() 
-
+    
     for p in rnn.parameters(): 
         p.data.add_(-learning_rate, p.grad.data)
 
@@ -200,20 +261,26 @@ def timeSince(since):
     return '%dm %ds' % (m, s)
 start = time.time() 
 print('STARTING TRAINING')
+y_pred, y_true = [] , [] 
 for iter in range(1, n_iters+1): 
     category, line, category_tensor, line_tensor = randomTrainingExample()
-    output, loss = train(category_tensor, line_tensor)
-    current_loss += loss 
+    try: 
+        output, loss = train(category_tensor, line_tensor)
+        current_loss += loss 
 
-    if iter % print_every == 0:
         guess, guess_i = categoryFromOutput(output)
-        correct = '✓' if guess == category else '✗ (%s)' % category
-        print('%d %d%% (%s) %.4f %s / %s %s' % (iter, iter / n_iters * 100, timeSince(start), loss, line[:20], guess, correct))
-
-    # Add current loss avg to list of losses
-    if iter % plot_every == 0:
-        all_losses.append(current_loss / plot_every)
-        current_loss = 0
+        y_pred.append(guess)
+        y_true.append(category)
+        if iter % print_every == 0:
+            guess, guess_i = categoryFromOutput(output)
+            correct = '✓' if guess == category else '✗ (%s)' % category
+            print('%d %d%% (%s) %.4f %s / %s %s' % (iter, iter / n_iters * 100, timeSince(start), loss, line[:20], guess, correct))
+            print('accuracy', accuracy_score(y_true, y_pred))
+        # Add current loss avg to list of losses
+        if iter % plot_every == 0:
+            all_losses.append(current_loss / plot_every)
+            current_loss = 0
+    except: print(category, line)
 
 #PLOT TRAINING LOSS 
 import matplotlib.pyplot as plt
