@@ -1,0 +1,10 @@
+Libraries Used 
+- Pandas 
+- Numpy 
+- Seaborn 
+- Matplotlib 
+- Langdect 
+- Scipy 
+- NLTK 
+- SKlearn 
+- Pytorch 
