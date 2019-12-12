@@ -89,6 +89,20 @@ def popularity_of_words(lyrics):
     word_freq = sorted(list(zip(word_tokens.values(), word_tokens.keys())), reverse=True)
     print(word_freq[:25])
 
+def plot_results(foo, metric, model = None):
+    #foo: dictionary of model run with data for each epoch
+    #metric: number we want to track. include the '_' after! E.G. for accuracy, metric = 'acc_'
+    #model: name of model to include in plot title
+    plt.figure()
+    plt.plot(foo['train_' + metric])
+    plt.plot(foo['test_'+metric], linestyle='--')
+    plt.legend(['train', 'validation'])
+    if not model:
+        plt.title('Train/Validation ' + metric[:-1] +' vs Epoch')
+    else:
+        plt.title(model + ' Train/Validation ' + metric[:-1] +' vs Epoch')
+    plt.show()
+
 #corr_plot(hh_lyrics)
 # dist(csv['genre'])    
 #cloud(hh_lyrics)
