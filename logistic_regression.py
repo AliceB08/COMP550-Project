@@ -2,16 +2,15 @@ import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.tokenize import word_tokenize
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedShuffleSplit 
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.preprocessing import Normalizer, FunctionTransformer, StandardScaler
 from sklearn.metrics import classification_report
-
-#*************** Initialize *******************
-target = [] 
-songs = [] 
-
+from sklearn.metrics import plot_confusion_matrix
+import numpy as np
+import matplotlib.pyplot as plt
+ 
 #*********** Customer Preprocessing ********
 def genre_to_int(data):  
     genre = data['genre']
@@ -44,9 +43,9 @@ def get_lemma(sentence):
     return " ".join(lemmad_tokens)
     
 #*************** Read Data *******************
-csv = pd.read_csv('./lyrics.csv')
-#csv = csv.iloc[:10000, :]
-csv['genre'] = csv.apply(genre_to_int, axis=1)
+csv = pd.read_csv('./final_final_lyrics_dataframe.csv')
+
+# csv['genre'] = csv.apply(genre_to_int, axis=1)
 print(len(csv))
 csv.dropna(axis = 0, how="any", inplace=True) #drop row if any null in it 
 print(len(csv))
@@ -98,3 +97,19 @@ best_model = grid_search.best_estimator_
 y_true, y_pred = y_test, best_model.predict(X_test)
 print('*******************TEST CLASSIFICATION REPORT****************')
 print(classification_report(y_true, y_pred))
+
+titles_options = [("Confusion matrix, without normalization", None),
+                  ("Normalized confusion matrix", 'true')]
+
+class_names = [0,1,2,3,4,5,6,7,8,9]
+for title, normalize in titles_options:
+    disp = plot_confusion_matrix(grid_search, X_test, y_test,
+                                 display_labels=class_names,
+                                 cmap=plt.cm.Blues,
+                                 normalize=normalize)
+    disp.ax_.set_title(title)
+
+    print(title)
+    print(disp.confusion_matrix)
+
+plt.show()

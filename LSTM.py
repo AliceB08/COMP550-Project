@@ -43,7 +43,7 @@ max_epochs = 30
 
 model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix))
 loss_function = nn.NLLLoss()
-optimizer = optim.SGD(model.parameters(), lr=0.1)
+optimizer = optim.SGD(model.parameters(), lr=0.01)
 
 y_pred, y_true = [], [] 
 training_acc, training_precision, training_recall = [], [] , []   
